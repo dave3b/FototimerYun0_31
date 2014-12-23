@@ -75,7 +75,7 @@ const bool SKIP_INTRO = true;
 
 
 #ifdef ISOREMOTE_YUN
-  #include <yunremote.h>
+  //#include <yunremote.h>
 #endif
 
 #ifdef ISOREMOTE_USBHOST
@@ -83,7 +83,7 @@ const bool SKIP_INTRO = true;
 #endif
 
 #ifdef ISOREMOTE_SERIAL
-  #include <isoremote.h>
+  // #include <isoremote.h>
 #endif
 
 #include <PrintSubFunctions.h>
@@ -194,7 +194,8 @@ void setup()
 {
   // variable to setup custom display characters
   uint8_t newLCDchar[8];
-  
+      Serial.begin(115200);
+  Serial << "Fototimer Yun0_31 setup routine\n";
   // first load config and settings
   loadConfig();
   loadSettings();
@@ -236,13 +237,13 @@ void setup()
     // interrupt attached at pause/start
     //attachInterrupt(1, timerflash, FALLING);
     // config interrupts for rotary encoder on pin 3
-    attachInterrupt(0, getEncoder, FALLING);
+    //attachInterrupt(0, getEncoder, FALLING);
   #else
     // flash signal on pin 2 interrupt
     // interrupt attached at pause/start
     //attachInterrupt(0, timerflash, FALLING);
     // config interrupts for rotary encoder on pin 3
-    attachInterrupt(1, getEncoder, FALLING);  
+    //attachInterrupt(1, getEncoder, FALLING);  
   #endif
   // start delay for reading welcome message
   temp_int = 7; 
@@ -268,9 +269,9 @@ void setup()
   temp_int = 16;
   temp_input = 0;
   // begin to establish communication with Linux ISO client
-  isoremotebegin();
+  //isoremotebegin();
   // loop until sucess
-  while(temp_input == 0 && temp_int > 0)
+/*  while(temp_input == 0 && temp_int > 0)
     {
     temp_input = getanswer(&isolevel);
     if ( isolevel == 0)
@@ -281,7 +282,7 @@ void setup()
     lcd.print("*");
     delay(500);
     }
-  // clear temporaly variables
+*/  // clear temporaly variables
   temp_input = 0;
   temp_int = 0;
   // prepare the first timer cyclus after 1S (1000mS)
@@ -289,6 +290,7 @@ void setup()
   MsTimer2::set(nextaction,timerpausecheck);
   // clear the display  
   lcd.clear();
+  Serial << "Done with setup";
   // and go for the timer interupt function
   MsTimer2::start();
 }
@@ -304,6 +306,7 @@ void loop()
     if (loopactioncounter > 10)
     {
         loopactioncounter = 0;
+        Serial << "<10CYC>\n";
     }
     // check if new cycle beginns
     // calculate the parameters
@@ -313,6 +316,7 @@ void loop()
     }
     // get pressed key
     keycode = getKey(&keyValueH, &keyValueV);
+    Serial << keycode << " ";
     // user interface handling, switch between the screens 
     switch (menuescreen)
     {
@@ -368,6 +372,7 @@ void loop()
       lcd.print(" ");
       }
     delay(100);
+    //Serial << "end of loop\n";
 }
 
 /********************************************
@@ -431,6 +436,7 @@ void timerstartshutter()
     {
     // time for shutter
     // LOW activ signals here
+    Serial << "opening shutter\n";
     digitalWrite(shutterPin, LOW);
     startshutter = micros(); // timestamp
     //noInterrupts(); // deactivate interrupts
@@ -459,6 +465,7 @@ void timerstartshutter()
 
 void timerflash()
   {
+  Serial << "Timerflash routine\n";
   startflash = micros(); // timestamp
   // nextaction was calculated the function before --> timerstartshutter()
   MsTimer2::set(nextaction,timerstopshutter);
@@ -470,6 +477,7 @@ void timerstopshutter()
   {
   // time for shutter end
   // LOW activ signals here
+  //Serial << "closing shutter\n";
   digitalWrite(shutterPin, HIGH);
   // use the two timestamps to calculate the measured delay from shutter via flash signal
   if (delayactive == true)
@@ -618,7 +626,7 @@ void statusScreen()
       {
       lcd.print("Pause");
       } 
-   
+  Serial << "SS ";
     
   // key actions
   if (keycode < KEY_CODE_NEUTRAL || encoderValue != 0)
@@ -644,22 +652,24 @@ void statusScreen()
       }
     if (keycode == KEY_CODE_OK)
       {
+        Serial << "..SS keycode_OK..";
       // get iso level now
-      getisolevel();
+      //getisolevel();
       // loop until success
-      while ( getanswer(&isolevel) == 0 );
+      //while ( getanswer(&isolevel) == 0 );
       // if flashback function is used, activate interrupt
       if (delayactive == true)
         {
         #ifdef HARDWARE_YUN
           // on YUN, the interupts are "twisted"
           // flash signal on pin 2 interrupt
-          attachInterrupt(1, timerflash, FALLING);
+          //attachInterrupt(1, timerflash, FALLING);
         #else
           // flash signal on pin 2 interrupt
-          attachInterrupt(0, timerflash, FALLING);
+          //attachInterrupt(0, timerflash, FALLING);
         #endif
         }  
+      Serial << "Statusscreen: turned off timerpasue\n";
       timerpause = false;
       }
     if (keycode == KEY_CODE_CANCEL)
@@ -667,16 +677,17 @@ void statusScreen()
       #ifdef HARDWARE_YUN
         // on YUN, the interupts are "twisted"
         // flash signal on pin 2 interrupt
-        detachInterrupt(1);
+        //detachInterrupt(1);
       #else
         // flash signal on pin 2 interrupt
-        detachInterrupt(0);
+        //detachInterrupt(0);
       #endif  
       timerpause = true;
       }
     // done with key actions
     keycode = KEY_CODE_NEUTRAL;
     encoderValue = 0;
+      Serial << "..SS done with keys..";
     }
   } // end status screen 1
     
@@ -1163,11 +1174,11 @@ void settings2Srceen()
           {
           if (isolevel == 0)
             {
-            getisolevel();
+            //getisolevel();
             lcd.setCursor(1,1);
             lcd.print("read ISOspeed");
             delay(1000);
-            getanswer(&isolevel);
+            //getanswer(&isolevel);
             }
           else
             {
@@ -1189,13 +1200,13 @@ void settings2Srceen()
           lcd.print("  ISO client   ");
           lcd.setCursor(1,1);
           lcd.print(" powering off ");    
-          #ifdef ISOREMOTE_SERIAL
+      /*    #ifdef ISOREMOTE_SERIAL
           clientpoweroff();
           while (isolevel > 0)
             {
             getanswer(&isolevel);
             }
-          #endif
+          #endif*/
           functionscreen = 0;
           menuescreen = 2;
           keycode = KEY_CODE_NEUTRAL;
@@ -1553,11 +1564,11 @@ void iso_switch_up(void)
     // remember old isolevel
     isolvold = isolevel;
     // give command to new isolevel
-    setisolevel(isolvold * 2);
+    //setisolevel(isolvold * 2);
     // wait max. 10S for answer ...
     while (isolvold * 2 != isolevel)
       {
-      getanswer(&isolevel);
+      //getanswer(&isolevel);
       delay(10);
       ++count;
       if (count > 1000)
@@ -1567,11 +1578,11 @@ void iso_switch_up(void)
       }
     }
     timestamp2 = millis();
-    #ifdef ISOREMOTE_YUN
+/*    #ifdef ISOREMOTE_YUN
         Serial1.print("Debug:");
         Serial1.print(timestamp2-timestamp1,DEC);
         Serial1.print("mS\n");
-    #endif    
+    #endif    */
     // check for success
     if (isolvold * 2 == isolevel)
       {
@@ -1597,7 +1608,7 @@ void iso_switch_down(void)
     // remember old isolevel
     isolvold = isolevel;
     // give command to new isolevel
-    setisolevel(isolvold / 2);
+    //setisolevel(isolvold / 2);
     // wait max. 10S for answer ...
     while (isolvold / 2 != isolevel)
       {
@@ -1611,11 +1622,11 @@ void iso_switch_down(void)
       }
     }
     timestamp2 = millis();
-    #ifdef ISOREMOTE_YUN
+/*    #ifdef ISOREMOTE_YUN
       Serial1.print("Debug:");
       Serial1.print(timestamp2-timestamp1,DEC);
       Serial1.print("mS\n");
-    #endif
+    #endif*/
     // check for success
     if (isolvold / 2 == isolevel)
       {
