@@ -23,10 +23,17 @@ and FotoTimerYun0.2
 - calculate exposure ramp function without table
 *** under development: ***
 - serial communication for automatic ISO switch
-  (without bridge library @ yun, or a RaspberryPi as slave connected via USB)
+  (without bridge library @ yun, or a RaspberryPi as slave connected via  )
 - use USB-Host-Shield for automatic ISO switch (on Mega ADK)
 - compile Options for serveral hardware and ISO switch solutions
  */
+ 
+/* April2015 Notes by DPl
+- Yun0.31 (has been numbered such for a while now)
+- made a few modifications so that this now runs again reliably on Arduino Mega ADK, including flashback control
+- On Canon EOS 7D, expooff needs to be in the area of -30ms!
+  (reason for negative number needs to be explored, maybe flash response occurs somewhat after shutter is already open)
+*/
  
 /* *********************************************
 ** IMPORTANT! FIRST DEFINE HARDWARE PLATFORM! **
@@ -47,13 +54,13 @@ const int batteryPin = 1;  // the number of the analog input used for the batter
 const int encoderPinA = 3;  // the number of the encoder A digital input pin
 const int encoderPinB = 4;  // the number of the encoder B digital input pin
 const int encoderPinE = A4;  // the number of the encoder Enter digital input pin
-#ifdef HARDWARE_MEGA // MEGA ADK needs other Pin setup, because pin7 is used for USB interupt
+/****April2015 #ifdef HARDWARE_MEGA // MEGA ADK needs other Pin setup, because pin7 is used for USB interupt */
   // not used on MEGA ADK     // the number of the option signal digital output pin
   const int shutterPin = 6;   // the number of the shutter signal digital output pin
-#else
+/*****April2015  #else
   const int optionPin = 6;    // the number of the option signal digital output pin
   const int shutterPin = 7;   // the number of the shutter signal digital output pin
-#endif
+#endif */
 const int flashPin = 2;    // the number of the flash signal digital input pin
 const int contrastPin = 5;   // the number of the pwr signal pin for contrast voltage
 const float intermax = 5940.0; // maximaler interval [S], 5940S = 99M
@@ -241,7 +248,7 @@ void setup()
   #else
     // flash signal on pin 2 interrupt
     // interrupt attached at pause/start
-    //attachInterrupt(0, timerflash, FALLING);
+    attachInterrupt(0, timerflash, FALLING);
     // config interrupts for rotary encoder on pin 3
     //attachInterrupt(1, getEncoder, FALLING);  
   #endif
@@ -666,7 +673,7 @@ void statusScreen()
           //attachInterrupt(1, timerflash, FALLING);
         #else
           // flash signal on pin 2 interrupt
-          //attachInterrupt(0, timerflash, FALLING);
+          attachInterrupt(0, timerflash, FALLING);
         #endif
         }  
       Serial << "Statusscreen: turned off timerpasue\n";
